@@ -85,6 +85,14 @@ endif()
 
 project(COLMAP LANGUAGES C CXX)
 
+set(_COLMAP_METAL_DEFAULT OFF)
+if(CMAKE_SYSTEM_NAME STREQUAL "Darwin" AND
+   (CMAKE_OSX_ARCHITECTURES MATCHES "arm64" OR
+    (NOT CMAKE_OSX_ARCHITECTURES AND CMAKE_SYSTEM_PROCESSOR STREQUAL "arm64")))
+    set(_COLMAP_METAL_DEFAULT ON)
+endif()
+option(METAL_ENABLED "Whether to enable Apple Metal for PatchMatch stereo" ${_COLMAP_METAL_DEFAULT})
+
 set(COLMAP_VERSION "4.3.0.dev0")
 
 set(CMAKE_CXX_STANDARD 17)
@@ -129,6 +137,17 @@ endif()
 
 set(COLMAP_FIND_QUIETLY FALSE)
 include(cmake/FindDependencies.cmake)
+
+if(METAL_ENABLED AND MVS_ENABLED AND NOT CUDA_ENABLED AND NOT HIP_ENABLED)
+    if(NOT CMAKE_SYSTEM_NAME STREQUAL "Darwin")
+        message(FATAL_ERROR "Metal PatchMatch stereo requires macOS")
+    endif()
+    cmake_minimum_required(VERSION 3.16)
+    enable_language(OBJCXX)
+    list(APPEND COLMAP_COMPILE_DEFINITIONS COLMAP_METAL_ENABLED)
+    set(COLMAP_MVS_METAL TRUE)
+    message(STATUS "Enabling Metal PatchMatch stereo")
+endif()
 
 ################################################################################
 # Compiler specific configuration

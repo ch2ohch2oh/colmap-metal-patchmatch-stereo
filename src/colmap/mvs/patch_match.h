@@ -19,12 +19,9 @@ namespace colmap {
 namespace mvs {
 
 class ConsistencyGraph;
-class PatchMatchCuda;
 class Workspace;
 
-// This is a wrapper class around the actual PatchMatchCuda implementation. This
-// class is necessary to hide Cuda code from any boost or Eigen code, since
-// NVCC/MSVC cannot compile complex C++ code.
+// Keep GPU-specific types out of the public interface.
 class PatchMatch {
  public:
   struct Problem {
@@ -63,9 +60,10 @@ class PatchMatch {
   Mat<float> GetSelProbMap() const;
 
  private:
+  class Backend;
   const PatchMatchOptions options_;
   const Problem problem_;
-  std::unique_ptr<PatchMatchCuda> patch_match_cuda_;
+  std::unique_ptr<Backend> backend_;
 };
 
 // This thread processes all problems in a workspace. A workspace has the

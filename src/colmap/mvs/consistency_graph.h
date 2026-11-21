@@ -19,8 +19,7 @@ namespace mvs {
 //
 // where r, c are the row and column image coordinates of the pixel,
 // N is the number of consistent images, followed by the N image indices.
-// Note that only pixels are listed which are not filtered and that the
-// consistency graph is only filled if filtering is enabled.
+// The graph lists supporting source images for pixels with valid output depth.
 class ConsistencyGraph {
  public:
   ConsistencyGraph();

@@ -315,6 +315,19 @@ Run COLMAP::
     colmap -h
     colmap gui
 
+Native Apple Silicon builds with MVS enabled select Metal for PatchMatch
+stereo when CUDA and HIP are unavailable. Use CMake 3.16 or newer and the macOS
+SDK. To enable Metal explicitly or build the GPU tests::
+
+    cmake -S . -B build -GNinja -DCUDA_ENABLED=OFF -DMETAL_ENABLED=ON -DTESTS_ENABLED=ON
+    cmake --build build --target colmap_main colmap_mvs_patch_match_metal_test
+    (cd build && ctest -R mvs/patch_match_metal_test --output-on-failure)
+
+The Metal source is embedded in the MVS library and compiled by the Metal
+runtime once per process. Tests require access to the GPU. Use
+``-DMETAL_ENABLED=OFF`` to disable the backend. See :ref:`metal-patch-match`
+for usage and implementation details.
+
 
 Windows
 -------

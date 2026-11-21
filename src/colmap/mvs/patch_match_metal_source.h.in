@@ -1,0 +1,7 @@
+// SPDX-License-Identifier: BSD-3-Clause
+
+constexpr char kPatchMatchMetalSource[] = R"MSL(
+#define COLMAP_METAL_EMBEDDED_SOURCE
+@PATCH_MATCH_METAL_TYPES@
+@PATCH_MATCH_METAL_SOURCE@
+)MSL";

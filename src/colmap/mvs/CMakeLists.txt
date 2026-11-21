@@ -36,6 +36,30 @@ if(OPENMP_FOUND)
     target_link_libraries(colmap_mvs PRIVATE OpenMP::OpenMP_CXX)
 endif()
 
+if(COLMAP_MVS_METAL)
+    # Embed the shader so the CLI and library consumers use the same source
+    # without needing an Xcode Metal toolchain or a runtime resource path.
+    set_property(DIRECTORY APPEND PROPERTY CMAKE_CONFIGURE_DEPENDS
+        patch_match_metal.metal patch_match_metal_types.h)
+    file(READ patch_match_metal_types.h PATCH_MATCH_METAL_TYPES)
+    file(READ patch_match_metal.metal PATCH_MATCH_METAL_SOURCE)
+    configure_file(patch_match_metal_source.h.in patch_match_metal_source.h @ONLY)
+    target_sources(colmap_mvs PRIVATE
+        patch_match.h patch_match.cc
+        patch_match_metal.h patch_match_metal.mm patch_match_metal_types.h)
+    target_include_directories(colmap_mvs PRIVATE "${CMAKE_CURRENT_BINARY_DIR}")
+    target_compile_options(colmap_mvs PRIVATE $<$<COMPILE_LANGUAGE:OBJCXX>:-fobjc-arc>)
+    set_target_properties(colmap_mvs PROPERTIES
+        OBJCXX_STANDARD 17
+        OBJCXX_STANDARD_REQUIRED ON)
+    target_link_libraries(colmap_mvs PRIVATE "-framework Metal" "-framework Foundation")
+    COLMAP_ADD_TEST(
+        NAME patch_match_metal_test
+        SRCS patch_match_metal_test.cc
+        LINK_LIBS colmap_mvs
+    )
+endif()
+
 COLMAP_ADD_TEST(
     NAME consistency_graph_test
     SRCS consistency_graph_test.cc

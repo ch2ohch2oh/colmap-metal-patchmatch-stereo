@@ -541,16 +541,12 @@ change during these steps.
 Available functionality without GPU/CUDA
 ----------------------------------------
 
-If you do not have a CUDA-enabled GPU but some other GPU, you can use all COLMAP
-functionality except the dense reconstruction part. However, you can use
-external dense reconstruction software as an alternative, as described in the
-:ref:`Tutorial <dense-reconstruction>`. If you have a GPU with low compute power
-or you want to execute COLMAP on a machine without an attached display and
-without CUDA support, you can run all steps on the CPU by specifying the
-appropriate options (e.g., ``--FeatureExtraction.use_gpu=false`` for the feature
-extraction step). But note that this might result in a significant slow-down of
-the reconstruction pipeline. Please, also note that feature extraction on the
-CPU can consume excessive RAM for large images in the default settings, which
+COLMAP's PatchMatch stereo requires CUDA, HIP, or :ref:`Metal <metal-patch-match>`.
+External dense reconstruction software can also use COLMAP's sparse output,
+as described in the :ref:`Tutorial <dense-reconstruction>`. Feature extraction
+and matching support CPU execution, for example with
+``--FeatureExtraction.use_gpu=false`` and ``--FeatureMatching.use_gpu=false``.
+CPU feature extraction can consume excessive RAM for large images, which
 might require manually reducing the maximum image size using
 ``--FeatureExtraction.max_image_size`` and/or setting
 ``--SiftExtraction.first_octave 0`` or by manually limiting the number of

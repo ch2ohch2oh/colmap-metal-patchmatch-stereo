@@ -103,6 +103,54 @@ of commands as an alternative to the automatic reconstruction command::
         --input_path $DATASET_PATH/dense/meshed-poisson.ply \
         --output_path $DATASET_PATH/dense/textured
 
+.. _metal-patch-match:
+
+Metal PatchMatch stereo
+-----------------------
+
+On Apple Silicon, a COLMAP build with Metal support uses the default Metal GPU
+for PatchMatch. Given an undistorted COLMAP workspace, run::
+
+    colmap patch_match_stereo --workspace_path ./dense --workspace_format COLMAP
+    colmap stereo_fusion --workspace_path ./dense --workspace_format COLMAP \
+        --input_type geometric --output_path ./dense/fused.ply
+
+By default PatchMatch first writes photometric maps, then uses those maps for
+geometric refinement and filtering. Set ``--PatchMatchStereo.geom_consistency false``
+and fuse with ``--input_type photometric`` to use the photometric pass alone.
+The Metal backend accepts ``--PatchMatchStereo.gpu_index -1`` or ``0`` and
+processes one reference image at a time. A missing Metal GPU is reported as an
+error. Metal accelerates only the PatchMatch stage.
+
+The backend uses the same workspace controller and map formats as CUDA and
+HIP. Metal compute kernels initialize reference-camera depth and normal
+hypotheses, evaluate bilaterally weighted NCC with texture sampling, and
+alternate four directional propagation and random refinement sweeps. Geometric
+refinement uses forward-backward reprojection against source depth maps.
+Metal uses short independent stripes within a sweep and samples views using
+per-pixel NCC likelihoods and geometric priors. CUDA and HIP use full
+scanlines and spatially smoothed selection probabilities, so the resulting
+maps can differ across backends.
+
+Metal logs GPU time and allocated GPU resources per reference view. Texture
+arrays are sized by the largest input view, and the cached NCC costs scale
+with reference resolution times the number of source images. To reduce time
+and memory, start with a smaller ``--max_image_size`` and
+``--num_patch_match_src_images`` at undistortion. Increasing
+``--PatchMatchStereo.window_step`` to ``2`` samples fewer pixels per patch.
+For a quick run on the :ref:`South Building dataset <datasets>` with an
+existing sparse reconstruction, start with::
+
+    mkdir -p ./dense-preview
+    colmap image_undistorter --image_path ./images --input_path ./sparse/0 \
+        --output_path ./dense-preview --output_type COLMAP \
+        --max_image_size 320 --num_patch_match_src_images 8
+    colmap patch_match_stereo --workspace_path ./dense-preview --workspace_format COLMAP \
+        --PatchMatchStereo.window_step 2 --PatchMatchStereo.num_iterations 3 \
+        --PatchMatchStereo.num_samples 6
+    colmap stereo_fusion --workspace_path ./dense-preview --workspace_format COLMAP \
+        --input_type geometric --output_path ./dense-preview/fused.ply
+
 Graceful shutdown and resuming
 ------------------------------
 

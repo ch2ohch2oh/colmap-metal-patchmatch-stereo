@@ -1,6 +1,29 @@
 COLMAP
 ======
 
+What's added here
+-----------------
+
+This version adds **native Metal PatchMatch Stereo for Apple Silicon** to
+upstream COLMAP. The Metal backend, integration code, tests, and documentation
+for this feature were **fully AI-generated with OpenAI Codex**.
+
+The new GPU backend runs photometric matching, geometric
+refinement, and depth filtering through the existing `patch_match_stereo` CLI
+and the GUI's **Dense reconstruction** panel. It writes standard COLMAP depth
+and normal maps for stereo fusion. Apple Silicon builds select Metal
+automatically when built without CUDA or HIP. See the
+[macOS build instructions](doc/install.rst) and [CLI walkthrough](doc/cli.rst).
+
+In a GUI verification run on an Apple M4, Metal processed all 128 South Building
+views at 320 pixels on the longest edge. Stereo fusion produced 146,511 points,
+and Poisson meshing generated the surface below. Both screenshots were captured
+in COLMAP.
+
+| Sparse model and camera poses | Dense surface mesh |
+| --- | --- |
+| ![South Building sparse point cloud and registered cameras in COLMAP](doc/images/south-building-sparse.png) | ![South Building dense surface mesh in COLMAP](doc/images/south-building-metal.png) |
+
 About
 -----
 

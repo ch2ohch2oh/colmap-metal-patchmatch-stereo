@@ -4,13 +4,18 @@
 
 #include "colmap/math/math.h"
 #include "colmap/mvs/consistency_graph.h"
-#include "colmap/mvs/patch_match_cuda.h"
 #include "colmap/mvs/workspace.h"
-#include "colmap/util/cuda.h"
 #include "colmap/util/file.h"
 #include "colmap/util/hash_containers.h"
 #include "colmap/util/misc.h"
 #include "colmap/util/threading.h"
+
+#ifdef COLMAP_METAL_ENABLED
+#include "colmap/mvs/patch_match_metal.h"
+#else
+#include "colmap/mvs/patch_match_cuda.h"
+#include "colmap/util/cuda.h"
+#endif
 
 #include <numeric>
 #include <set>
@@ -19,6 +24,18 @@
 
 namespace colmap {
 namespace mvs {
+
+#ifdef COLMAP_METAL_ENABLED
+class PatchMatch::Backend : public PatchMatchMetal {
+ public:
+  using PatchMatchMetal::PatchMatchMetal;
+};
+#else
+class PatchMatch::Backend : public PatchMatchCuda {
+ public:
+  using PatchMatchCuda::PatchMatchCuda;
+};
+#endif
 
 PatchMatch::PatchMatch(const PatchMatchOptions& options, const Problem& problem)
     : options_(options), problem_(problem) {}
@@ -103,27 +120,27 @@ void PatchMatch::Run() {
 
   Check();
 
-  patch_match_cuda_ = std::make_unique<PatchMatchCuda>(options_, problem_);
-  patch_match_cuda_->Run();
+  backend_ = std::make_unique<Backend>(options_, problem_);
+  backend_->Run();
 }
 
 DepthMap PatchMatch::GetDepthMap() const {
-  return patch_match_cuda_->GetDepthMap();
+  return backend_->GetDepthMap();
 }
 
 NormalMap PatchMatch::GetNormalMap() const {
-  return patch_match_cuda_->GetNormalMap();
+  return backend_->GetNormalMap();
 }
 
 Mat<float> PatchMatch::GetSelProbMap() const {
-  return patch_match_cuda_->GetSelProbMap();
+  return backend_->GetSelProbMap();
 }
 
 ConsistencyGraph PatchMatch::GetConsistencyGraph() const {
   const auto& ref_image = problem_.images->at(problem_.ref_image_idx);
   return ConsistencyGraph(ref_image.GetWidth(),
                           ref_image.GetHeight(),
-                          patch_match_cuda_->GetConsistentImageIdxs());
+                          backend_->GetConsistentImageIdxs());
 }
 
 PatchMatchController::PatchMatchController(
@@ -347,12 +364,20 @@ void PatchMatchController::ReadProblems() {
 
 void PatchMatchController::ReadGpuIndices() {
   gpu_indices_ = CSVToVector<int>(options_.gpu_index);
+#ifdef COLMAP_METAL_ENABLED
+  THROW_CHECK(gpu_indices_ == std::vector<int>{-1} ||
+              gpu_indices_ == std::vector<int>{0})
+      << "Metal PatchMatch accepts gpu_index -1 or 0 (the default device).";
+  PatchMatchMetal::CheckDevice();
+  gpu_indices_ = {0};
+#else
   if (gpu_indices_.size() == 1 && gpu_indices_[0] == -1) {
     const int num_cuda_devices = GetNumCudaDevices();
     THROW_CHECK_GT(num_cuda_devices, 0);
     gpu_indices_.resize(num_cuda_devices);
     std::iota(gpu_indices_.begin(), gpu_indices_.end(), 0);
   }
+#endif
 }
 
 void PatchMatchController::ProcessProblem(const PatchMatchOptions& options,
