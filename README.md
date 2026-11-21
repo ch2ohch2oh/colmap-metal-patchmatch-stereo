@@ -20,13 +20,9 @@ views at 320 pixels on the longest edge. Stereo fusion produced about 146,500
 points, and Poisson meshing generated the surface below. All screenshots were
 captured in COLMAP.
 
-| Sparse model and camera poses | Dense surface mesh |
-| --- | --- |
-| ![South Building sparse point cloud and registered cameras in COLMAP](doc/images/south-building-sparse.png) | ![South Building dense surface mesh in COLMAP](doc/images/south-building-metal.png) |
-
-**Dense point cloud after stereo fusion**
-
-![South Building fused dense point cloud in COLMAP](doc/images/south-building-dense-points.png)
+| Sparse model and camera poses | Fused dense point cloud | Poisson surface mesh |
+| --- | --- | --- |
+| ![South Building sparse model and registered cameras in COLMAP](doc/images/south-building-sparse.png) | ![South Building fused dense point cloud in COLMAP](doc/images/south-building-dense-points.png) | ![South Building Poisson surface mesh in COLMAP](doc/images/south-building-metal.png) |
 
 About
 -----
